@@ -74,14 +74,18 @@
                   uv.enable = true;
                   venv.enable = true;
                   venv.requirements = ''
+                    llama-index
+                    llama-index-agent-openai
+                    llama-index-tools-google
+                    llama-index-tools-wikipedia
                     langchain
-                    langchain-core
-                    langchain-text-splitters
-                    langchainplus-sdk
-                    langchain-openai
-                    langchain-ollama
                     langchain-cli
                     langchain-community
+                    langchain-core
+                    langchain-ollama
+                    langchain-openai
+                    langchain-text-splitters
+                    langchainplus-sdk
                     langgraph
                     langgraph-checkpoint
                     langgraph-checkpoint-postgres

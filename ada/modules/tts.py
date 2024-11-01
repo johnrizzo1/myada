@@ -25,6 +25,11 @@ class TextToSpeechService:
             device (str, optional): The device to be used for the model, either "cuda" if a GPU is available or "cpu".
             Defaults to "cuda" if available, otherwise "cpu".
         """
+        nltk.download("punkt")
+        nltk.download("wordnet")
+        nltk.download("omw-1.4")
+        nltk.download("punkt_tab")
+
         self.device = device
         self.processor = AutoProcessor.from_pretrained("suno/bark-small")
         self.model = BarkModel.from_pretrained("suno/bark-small")
@@ -37,6 +42,10 @@ class TextToSpeechService:
         Args:
             text (str): The input text to be synthesized.
             voice_preset (str, optional): The voice preset to be used for the synthesis. Defaults to "v2/en_speaker_1".
+                v2/en_speaker_6: English, American, male, neutral
+                v2/fr_speaker_1: French, female, cheerful
+                v2/ja_speaker_3: Japanese, male, calm
+                v2/zh_speaker_4: Chinese, female, friendly
 
         Returns:
             tuple: A tuple containing the sample rate and the generated audio array.
@@ -63,10 +72,6 @@ class TextToSpeechService:
             tuple: A tuple containing the sample rate and the generated audio array.
         """
         pieces = []
-        nltk.download("punkt")
-        nltk.download("wordnet")
-        nltk.download("omw-1.4")
-        nltk.download("punkt_tab")
 
         sentences = nltk.sent_tokenize(text)
         silence = np.zeros(int(0.25 * self.model.generation_config.sample_rate))

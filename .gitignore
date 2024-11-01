@@ -1,5 +1,11 @@
 .devenv
 .direnv
 # .env
-__pycache__
+__pycache__/
+.venv/
+.DS_Store
+.swp
 .env
+.env.dev.local
+.env.test.local
+.env.prod.local

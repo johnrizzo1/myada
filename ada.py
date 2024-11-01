@@ -18,8 +18,8 @@ from langchain_core.prompts import MessagesPlaceholder
 # from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_openai import OpenAIEmbeddings
-# from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+# from langchain_openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 # from langchain.chains import create_history_aware_retriever, create_retrieval_chain
@@ -35,8 +35,13 @@ import bs4
 
 import whisper
 import sounddevice as sd
-from tts import TextToSpeechService
+from dotenv import load_dotenv
 
+from ada.modules.tts import TextToSpeechService
+
+
+# Load .env variables
+load_dotenv()
 
 # Setting up the console and text to speach
 console = Console()
@@ -45,6 +50,7 @@ tts = TextToSpeechService()
 
 # llm = OllamaLLM(model="llama3.2")
 # llm = OllamaLLM(model="llama3")
+# llm = OllamaLLM(model="firefunction-v2")
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 ### Construct retriever ###
@@ -66,7 +72,7 @@ vectorstore = InMemoryVectorStore.from_documents(
 retriever = vectorstore.as_retriever()
 
 ### Contextualize question ###
-contextualize_q_system_prompt = (
+CONTEXTUALIZE_Q_SYSTEM_PROMPT = (
     "Given a chat history and the latest user question "
     "which might reference context in the chat history, "
     "formulate a standalone question which can be understood "
@@ -76,7 +82,7 @@ contextualize_q_system_prompt = (
 
 contextualize_q_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", contextualize_q_system_prompt),
+        ("system", CONTEXTUALIZE_Q_SYSTEM_PROMPT),
         MessagesPlaceholder("chat_history"),
         ("human", "{input}"),
     ]
@@ -87,9 +93,9 @@ history_aware_retriever = create_history_aware_retriever(
 )
 
 ### Answer question ###
-system_prompt = (
+SYSTEM_PROMPT = (
     "You are an assistant for question-answering tasks. "
-    "Your name is Ada. "
+    "Your name is Ada. [speed: 0.5]"
     "Use the following pieces of retrieved context to answer "
     "the question. If you don't know the answer, say that you "
     "don't know. Use three sentences maximum and keep the "
@@ -97,14 +103,14 @@ system_prompt = (
     "\n\n"
     "{context}"
 )
-qa_prompt = ChatPromptTemplate.from_messages(
+QA_PROMPT = ChatPromptTemplate.from_messages(
     [
-        ("system", system_prompt),
+        ("system", SYSTEM_PROMPT),
         MessagesPlaceholder("chat_history"),
         ("human", "{input}"),
     ]
 )
-question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+question_answer_chain = create_stuff_documents_chain(llm, QA_PROMPT)
 
 rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
@@ -179,7 +185,7 @@ def transcribe(audio_np: np.ndarray) -> str:
     Returns:
         str: The transcribed text.
     """
-    result = stt.transcribe(audio_np, fp16=False)  # Set fp16=True if using a GPU
+    result = stt.transcribe(audio_np, fp16=True)  # Set fp16=True if using a GPU
     text = result["text"].strip()
     return text
 
@@ -195,9 +201,6 @@ def get_llm_response(text: str) -> str:
         {"input": text},
         config=config,
     )["answer"]
-    # response = chain.invoke({"question": text})
-    if response.startswith("Assistant:"):
-        response = response[len("Assistant:") :].strip()
     return response
 
 def play_audio(sample_rate, audio_array):
@@ -247,7 +250,7 @@ if __name__ == "__main__":
 
                 with console.status("Generating response...", spinner="earth"):
                     response = get_llm_response(text)
-                    sample_rate, audio_array = tts.long_form_synthesize(response)
+                    sample_rate, audio_array = tts.long_form_synthesize(response, voice_preset = "v2/fr_speaker_1")
 
                 console.print(f"[cyan]Assistant: {response}")
                 play_audio(sample_rate, audio_array)
