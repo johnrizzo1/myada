@@ -1,119 +1,36 @@
 """
   This is the primary app
 """
-import time
-import threading
-from queue import Queue
-from typing import Sequence
-from typing_extensions import Annotated, TypedDict
-
-import numpy as np
-
-from rich.console import Console
-
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama.llms import OllamaLLM
-from langchain_community.document_loaders import WebBaseLoader
-from langchain_core.prompts import MessagesPlaceholder
 # from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
-from langchain_core.vectorstores import InMemoryVectorStore
 # from langchain_openai import OpenAIEmbeddings
+# from langchain.chains import create_history_aware_retriever, create_retrieval_chain
+# from langchain.tools.retriever import create_retriever_tool
+# from langgraph.prebuilt import create_react_agent
+from ada.modules.tts import TextToSpeechService
+from dotenv import load_dotenv
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import MessagesPlaceholder
+from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_ollama.llms import OllamaLLM
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-# from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-# from langchain.tools.retriever import create_retriever_tool
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, StateGraph
 from langgraph.graph.message import add_messages
-# from langgraph.prebuilt import create_react_agent
-
-# Beautiful Soup for the blog retriever tool
-import bs4
-
-import whisper
+from queue import Queue
+from rich.console import Console
+from typing import Sequence
+from typing_extensions import Annotated, TypedDict
+import bs4 # Beautiful Soup for the blog retriever tool
+import numpy as np
 import sounddevice as sd
-from dotenv import load_dotenv
-
-from ada.modules.tts import TextToSpeechService
-
-
-# Load .env variables
-load_dotenv()
-
-# Setting up the console and text to speach
-console = Console()
-stt = whisper.load_model("base.en")
-tts = TextToSpeechService()
-
-# llm = OllamaLLM(model="llama3.2")
-# llm = OllamaLLM(model="llama3")
-# llm = OllamaLLM(model="firefunction-v2")
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-
-### Construct retriever ###
-loader = WebBaseLoader(
-    web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
-    bs_kwargs=dict(
-        parse_only=bs4.SoupStrainer(
-            class_=("post-content", "post-title", "post-header")
-        )
-    ),
-)
-docs = loader.load()
-
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-splits = text_splitter.split_documents(docs)
-vectorstore = InMemoryVectorStore.from_documents(
-    documents=splits, embedding=OpenAIEmbeddings()
-)
-retriever = vectorstore.as_retriever()
-
-### Contextualize question ###
-CONTEXTUALIZE_Q_SYSTEM_PROMPT = (
-    "Given a chat history and the latest user question "
-    "which might reference context in the chat history, "
-    "formulate a standalone question which can be understood "
-    "without the chat history. Do NOT answer the question, "
-    "just reformulate it if needed and otherwise return it as is."
-)
-
-contextualize_q_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", CONTEXTUALIZE_Q_SYSTEM_PROMPT),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
-
-history_aware_retriever = create_history_aware_retriever(
-    llm, retriever, contextualize_q_prompt
-)
-
-### Answer question ###
-SYSTEM_PROMPT = (
-    "You are an assistant for question-answering tasks. "
-    "Your name is Ada. [speed: 0.5]"
-    "Use the following pieces of retrieved context to answer "
-    "the question. If you don't know the answer, say that you "
-    "don't know. Use three sentences maximum and keep the "
-    "answer concise."
-    "\n\n"
-    "{context}"
-)
-QA_PROMPT = ChatPromptTemplate.from_messages(
-    [
-        ("system", SYSTEM_PROMPT),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
-question_answer_chain = create_stuff_documents_chain(llm, QA_PROMPT)
-
-rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
-
+import threading
+import time
+import whisper
 
 class State(TypedDict):
     """Statefully manage chat history
@@ -125,7 +42,6 @@ class State(TypedDict):
     chat_history: Annotated[Sequence[BaseMessage], add_messages]
     context: str
     answer: str
-
 
 def call_model(state: State):
     """Utility method to get the response
@@ -147,16 +63,6 @@ def call_model(state: State):
         "answer": response["answer"],
     }
 
-
-workflow = StateGraph(state_schema=State)
-workflow.add_edge(START, "model")
-workflow.add_node("model", call_model)
-
-memory = MemorySaver()
-app = workflow.compile(checkpointer=memory)
-
-config = {"configurable": {"thread_id": "abc123"}}
-
 def record_audio(stop_event, data_queue):
     """
     Captures audio data from the user's microphone and adds it to a queue for further processing.
@@ -171,9 +77,7 @@ def record_audio(stop_event, data_queue):
             console.print(status)
         data_queue.put(bytes(indata))
 
-    with sd.RawInputStream(
-        samplerate=16000, dtype="int16", channels=1, callback=callback
-    ):
+    with sd.RawInputStream( samplerate=16000, dtype="int16", channels=1, callback=callback ):
         while not stop_event.is_set():
             time.sleep(0.1)
 
@@ -185,7 +89,7 @@ def transcribe(audio_np: np.ndarray) -> str:
     Returns:
         str: The transcribed text.
     """
-    result = stt.transcribe(audio_np, fp16=True)  # Set fp16=True if using a GPU
+    result = stt.transcribe(audio_np) #, fp16=True)  # Set fp16=True if using a GPU
     text = result["text"].strip()
     return text
 
@@ -217,6 +121,90 @@ def play_audio(sample_rate, audio_array):
 
 
 if __name__ == "__main__":
+    load_dotenv()
+    # Load .env variables
+
+    # Setting up the console and text to speach
+    console = Console()
+    stt = whisper.load_model("base.en")
+    tts = TextToSpeechService()
+
+    # llm = OllamaLLM(model="llama3.2")
+    # llm = OllamaLLM(model="llama3")
+    # llm = OllamaLLM(model="firefunction-v2")
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+    ### Construct retriever ###
+    loader = WebBaseLoader(
+        web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
+        bs_kwargs=dict(
+            parse_only=bs4.SoupStrainer(
+                class_=("post-content", "post-title", "post-header")
+            )
+        ),
+    )
+    docs = loader.load()
+
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splits = text_splitter.split_documents(docs)
+    vectorstore = InMemoryVectorStore.from_documents(
+        documents=splits, embedding=OpenAIEmbeddings()
+    )
+    retriever = vectorstore.as_retriever()
+
+    ### Contextualize question ###
+    CONTEXTUALIZE_Q_SYSTEM_PROMPT = (
+        "Given a chat history and the latest user question "
+        "which might reference context in the chat history, "
+        "formulate a standalone question which can be understood "
+        "without the chat history. Do NOT answer the question, "
+        "just reformulate it if needed and otherwise return it as is."
+    )
+
+    contextualize_q_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", CONTEXTUALIZE_Q_SYSTEM_PROMPT),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ]
+    )
+
+    history_aware_retriever = create_history_aware_retriever(
+        llm, retriever, contextualize_q_prompt
+    )
+
+    ### Answer question ###
+    SYSTEM_PROMPT = (
+        "You are an assistant for question-answering tasks. "
+        "Your name is Ada. [speed: 0.5]"
+        "Use the following pieces of retrieved context to answer "
+        "the question. If you don't know the answer, say that you "
+        "don't know. Use three sentences maximum and keep the "
+        "answer concise."
+        "\n\n"
+        "{context}"
+    )
+    QA_PROMPT = ChatPromptTemplate.from_messages(
+        [
+            ("system", SYSTEM_PROMPT),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ]
+    )
+    question_answer_chain = create_stuff_documents_chain(llm, QA_PROMPT)
+
+    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+
+    workflow = StateGraph(state_schema=State)
+    workflow.add_edge(START, "model")
+    workflow.add_node("model", call_model)
+
+    memory = MemorySaver()
+    app = workflow.compile(checkpointer=memory)
+
+    config = {"configurable": {"thread_id": "abc123"}}
+
+    ### Interaction Loop ###
     console.print("[cyan]Assistant started! Press Ctrl+C to exit.")
 
     try:
@@ -250,7 +238,7 @@ if __name__ == "__main__":
 
                 with console.status("Generating response...", spinner="earth"):
                     response = get_llm_response(text)
-                    sample_rate, audio_array = tts.long_form_synthesize(response, voice_preset = "v2/fr_speaker_1")
+                    sample_rate, audio_array = tts.long_form_synthesize(response, voice_preset = "v2/en_speaker_1")
 
                 console.print(f"[cyan]Assistant: {response}")
                 play_audio(sample_rate, audio_array)

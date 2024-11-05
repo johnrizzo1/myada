@@ -17,7 +17,7 @@ class TextToSpeechService:
     """
     TextToSpeechService
     """
-    def __init__(self, device: str = "cuda" if torch.cuda.is_available() else "cpu"):
+    def __init__(self, device: str = "cpu"): 
         """
         Initializes the TextToSpeechService class.
 
@@ -25,12 +25,17 @@ class TextToSpeechService:
             device (str, optional): The device to be used for the model, either "cuda" if a GPU is available or "cpu".
             Defaults to "cuda" if available, otherwise "cpu".
         """
+
+        # Downloading the nltk files here so it happens once
         nltk.download("punkt")
         nltk.download("wordnet")
         nltk.download("omw-1.4")
         nltk.download("punkt_tab")
 
-        self.device = device
+        if torch.cuda.is_available(): self.device = "cuda" 
+        elif torch.backends.mps.is_available(): self.device = "mps" 
+        else: self.device = "cpu"
+
         self.processor = AutoProcessor.from_pretrained("suno/bark-small")
         self.model = BarkModel.from_pretrained("suno/bark-small")
         self.model.to(self.device)
@@ -54,7 +59,8 @@ class TextToSpeechService:
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.no_grad():
-            audio_array = self.model.generate(**inputs, pad_token_id=10000)
+            audio_array = self.model.generate(**inputs) # , pad_token_id=10000)
+            # audio_array = self.model.generate(**inputs, pad_token_id=10000)
 
         audio_array = audio_array.cpu().numpy().squeeze()
         sample_rate = self.model.generation_config.sample_rate

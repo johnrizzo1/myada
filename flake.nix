@@ -28,76 +28,102 @@
             # pkgs = nixpkgs.legacyPackages.${system};
             pkgs = import inputs.nixpkgs {
               config.allowUnfree = true;
-              config.cudaSupport = true;
+              config.cudaSupport = nixpkgs.stdenv.isLinux;
             };
+
+            pip_pkgs = 
+              if pkgs.stdenv.isLinux
+              then ''
+                llama-index
+                llama-index-agent-openai
+                llama-index-tools-google
+                llama-index-tools-wikipedia
+                langchain
+                langchain-cli
+                langchain-community
+                langchain-core
+                langchain-ollama
+                langchain-openai
+                langchain-text-splitters
+                langchainplus-sdk
+                langgraph
+                langgraph-checkpoint
+                langgraph-checkpoint-postgres
+                langgraph-checkpoint-sqlite
+              ''
+              else ''
+                llama-index
+                llama-index-agent-openai
+                llama-index-tools-google
+                llama-index-tools-wikipedia
+                langchain
+                langchain-cli
+                langchain-community
+                langchain-core
+                langchain-ollama
+                langchain-openai
+                langchain-text-splitters
+                langchainplus-sdk
+                langgraph
+                langgraph-checkpoint
+                langgraph-checkpoint-postgres
+                langgraph-checkpoint-sqlite
+
+                torch
+                torchaudio
+                torchvideo
+                transformers
+                pyttsx3
+                openai-whisper
+                nltk
+              '';
           in
           {
             default = devenv.lib.mkShell {
               inherit inputs pkgs;
-              modules = [
-                {
-                  packages = with pkgs; [
-                    cudatoolkit
-                    portaudio
-                    (python3.withPackages (python-pkgs: with python-pkgs; [
-                      jupyter-all
-                      jupyter-server
-                      ipykernel
-                      ipywidgets
+              modules = [ {
 
-                      python-dotenv
+                dotenv.enable = true;
 
-                      pyaudio
-                      openai-whisper
-                      sounddevice
-                      rich
-                      pyttsx3
+                packages = with pkgs; [
+                  portaudio
+                  (python3.withPackages (python-pkgs: with python-pkgs; [
+                    jupyter-all
+                    jupyter-server
+                    ipykernel
+                    ipywidgets
 
-                      torch
-                      torchaudio
-                      torchvision
-                      pandas
-                      numpy
-                      nltk
-                    ]))
-                  ];
+                    python-dotenv
 
-              	enterShell = ''
-              	  python -c "import torch; print(f'Cuda Enabled: {torch.cuda.is_available()}')"
-              	'';
+                    pyaudio
+                    sounddevice
+                    rich
 
-              	dotenv.enable = true;
+                    pandas
+                    numpy
+                  ]))
+                ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                  pyttsx3
+                  openai-whisper
+                  cudatoolkit
+                  torch
+                  torchaudio
+                  torchvision
+                  nltk
+                ];
 
-              	languages.python = {
+                enterShell = ''
+                  python -c "import torch; print(f'Torch Enabled: {torch.cuda.is_available() or torch.backends.mps.is_available()}')"
+                '';
+
+                languages.python = {
                   enable = true;
-                  # version = "3.11.10";
-                  # version = "3.11.10";
-                  # poetry.enable = true;
                   uv.enable = true;
                   venv.enable = true;
-                  venv.requirements = ''
-                    llama-index
-                    llama-index-agent-openai
-                    llama-index-tools-google
-                    llama-index-tools-wikipedia
-                    langchain
-                    langchain-cli
-                    langchain-community
-                    langchain-core
-                    langchain-ollama
-                    langchain-openai
-                    langchain-text-splitters
-                    langchainplus-sdk
-                    langgraph
-                    langgraph-checkpoint
-                    langgraph-checkpoint-postgres
-                    langgraph-checkpoint-sqlite
-                  '';
+                  venv.requirements = pip_pkgs;
                 };
-              }
-            ];
-          };
-        }
-      );
+              } ];
+            };
+          });
     };
 }
