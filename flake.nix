@@ -45,6 +45,8 @@
                       ipykernel
                       ipywidgets
 
+                      python-dotenv
+
                       pyaudio
                       openai-whisper
                       sounddevice
