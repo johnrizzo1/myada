@@ -9,3 +9,12 @@ __pycache__/
 .env.dev.local
 .env.test.local
 .env.prod.local
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
