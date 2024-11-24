@@ -1,0 +1,48 @@
+[build-system]
+requires = [ "setuptools" ]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ada"
+description = "ADA Another Digital Assistant"
+version = "1.0.0"
+authors = [
+    {name="John Rizzo", email="johnrizzo1@gmail.com"},
+]
+# readme = "README.rst"
+# keywords = ["". ""]
+# license = {text = "BSD-3-Clause"}
+requires-python = ">=3.12"
+dependencies = [
+    "requests",
+    "numpy==1.26.0",
+    "torch==2.5.*",
+    "python-dotenv",
+    "langchain",
+    "langchain-community",
+    "langchain-ollama",
+    "langchain-openai",
+    "langgraph",
+    "rich",
+    "beautifulsoup4",
+    "sounddevice",
+    # "openai-whisper",
+    # "pyaudio"
+]
+
+[project.optional-dependencies]
+extra = [
+    "simplejson>=3.19.2",
+]
+
+[project.scripts]
+ada = "ada:main"
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest>=8.2.1",
+    "pip",
+]
+
+[tool.setuptools]
+packages = ["ada"]
