@@ -42,6 +42,7 @@ ada = "ada:main"
 test = [
     "pytest>=8.2.1",
     "pip",
+    "sounddevice",
 ]
 
 [tool.setuptools]

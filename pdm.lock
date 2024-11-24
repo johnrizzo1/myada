@@ -5,7 +5,7 @@
 groups = ["default", "test"]
 strategy = ["cross_platform"]
 lock_version = "4.5.0"
-content_hash = "sha256:1d279d004cdb42343f39df19746799a33c8743560c452fd349a93504372ffdf3"
+content_hash = "sha256:7e0fffec1a572cc6b9f75827b69792ba2d3ac309623a1ed394379c2ac0c01543"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -915,15 +915,15 @@ files = [
 
 [[package]]
 name = "ollama"
-version = "0.4.0"
+version = "0.4.1"
 summary = ""
 dependencies = [
     "httpx",
     "pydantic",
 ]
 files = [
-    {file = "ollama-0.4.0-py3-none-any.whl", hash = "sha256:b47df2619503677c18bcee85ba76269270ff61eae727750d2a093413fc30cde8"},
-    {file = "ollama-0.4.0.tar.gz", hash = "sha256:2992242a4639e18e50254b87c45314813b61912c19b7635a2e93937b58f70c46"},
+    {file = "ollama-0.4.1-py3-none-any.whl", hash = "sha256:b6fb16aa5a3652633e1716acb12cf2f44aa18beb229329e46a0302734822dfad"},
+    {file = "ollama-0.4.1.tar.gz", hash = "sha256:8c6b5e7ff80dd0b8692150b03359f60bac7ca162b088c604069409142a684ad3"},
 ]
 
 [[package]]
