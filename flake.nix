@@ -37,10 +37,11 @@
       in {
         default = pkgs.mkShell {
           inputsFrom = [ada.devShell];
-          packages = [
-            pkgs.portaudio
-            pkgs.tbb
-            pkgs.ada
+          packages = with pkgs; [
+            portaudio
+            ada
+
+            
           ];
         };
       });

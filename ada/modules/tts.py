@@ -17,13 +17,9 @@ class TextToSpeechService:
     """
     TextToSpeechService
     """
-    def __init__(self, device: str = "cpu"): 
+    def __init__(self):
         """
         Initializes the TextToSpeechService class.
-
-        Args:
-            device (str, optional): The device to be used for the model, either "cuda" if a GPU is available or "cpu".
-            Defaults to "cuda" if available, otherwise "cpu".
         """
 
         # Downloading the nltk files here so it happens once
@@ -59,7 +55,7 @@ class TextToSpeechService:
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.no_grad():
-            audio_array = self.model.generate(**inputs) # , pad_token_id=10000)
+            audio_array = self.model.generate(**inputs)
             # audio_array = self.model.generate(**inputs, pad_token_id=10000)
 
         audio_array = audio_array.cpu().numpy().squeeze()
