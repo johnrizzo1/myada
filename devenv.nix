@@ -1,32 +1,32 @@
 { pkgs, lib, config, inputs, ... }:
 
-{
-  packages =
-    let
-      pkgs-stable = import inputs.nixpkgs {
-        inherit (pkgs.stdenv) system;
+let
+  # pkgs-stable = import inputs.nixpkgs {
+  #   inherit (pkgs.stdenv) system;
 
-        config.allowUnfree = true;
-        config.cudaSupport = true;
-      };
+  #   config.allowUnfree = true;
+  #   config.cudaSupport = true;
+  # };
 
-      pkgs-unstable = import inputs.nixpkgs-unstable {
-        inherit (pkgs.stdenv) system;
+  # pkgs-unstable = import inputs.nixpkgs-unstable {
+  #   inherit (pkgs.stdenv) system;
 
-        config.allowUnfree = true;
-        config.cudaSupport = true;
-      };
-    in
-    with pkgs-unstable; [
-      git
-      cudatoolkit
-      portaudio
-      nixpkgs-fmt
-    ];
+  #   config.allowUnfree = true;
+  #   config.cudaSupport = true;
+  # };
+in {
+  packages = with pkgs; [
+    git
+    portaudio
+    nixpkgs-fmt
+  ] ++ lib.optional pkgs.stdenv.isLinux [
+    cudatoolkit
+  ];
   
   languages.nix.enable = true;
   languages.python = {
     enable = true;
+    # package = pkgs-unstable.python3;
     venv.enable = true;
     venv.requirements = ''
       accelerate
@@ -81,8 +81,10 @@
       torch
       torchaudio
       torchvision
-      xformers
-    '';
+      # xformers # Only if linux with cuda
+    ''; #  ++ (if pkgs.stdenv.isLinux then ''
+    #  xformers
+    #'' else '''');
   };
 
   dotenv.enable = true;
@@ -94,9 +96,10 @@
     echo -n "Python Version: "; python --version
     echo "Pythons:"
     which -a python
-    echo -n "Cuda Enabled: "; python -c "import torch; print(torch.cuda.is_available())"
-    echo -n "llama google tools: "; python -c "import llama_index.tools.google"; [[ $? = 0 ]] && echo 'Imported' || echo 'Failed to import'
-    echo -n "Bark: "; python -c "import bark"; [[ $? = 0 ]] && echo 'Imported' || echo 'Failed to import'
+    # echo -n "Cuda Enabled: "; python -c "import torch; print(torch.cuda.is_available())"
+    # echo -n "MPS Enabled: "; python -c "import torch; print(torch.backends.mps.is_available())"
+    # echo -n "llama google tools: "; python -c "import llama_index.tools.google"; [[ $? = 0 ]] && echo 'Imported' || echo 'Failed to import'
+    # echo -n "Bark: "; python -c "import bark"; [[ $? = 0 ]] && echo 'Imported' || echo 'Failed to import'
   '';
 
   # See full reference at https://devenv.sh/reference/options/

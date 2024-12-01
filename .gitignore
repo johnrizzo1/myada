@@ -22,3 +22,4 @@ devenv.local.nix
 .idea/vcs.xml
 .idea/inspectionProfiles/profiles_settings.xml
 .idea/inspectionProfiles/Project_Default.xml
+$HOME/.cache/
