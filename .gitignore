@@ -18,3 +18,8 @@ devenv.local.nix
 
 # pre-commit
 .pre-commit-config.yaml
+research/.idea/misc.xml
+research/.idea/modules.xml
+research/.idea/research.iml
+research/.idea/vcs.xml
+research/.idea/workspace.xml

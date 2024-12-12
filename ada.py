@@ -7,6 +7,7 @@
 # from langchain.tools.retriever import create_retriever_tool
 # from langgraph.prebuilt import create_react_agent
 from ada.modules.tts import TextToSpeechService
+from ada.modules.stt import SpeachToTextService
 from dotenv import load_dotenv
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -25,12 +26,17 @@ from queue import Queue
 from rich.console import Console
 from typing import Sequence
 from typing_extensions import Annotated, TypedDict
-import bs4 # Beautiful Soup for the blog retriever tool
+import bs4  # Beautiful Soup for the blog retriever tool
 import numpy as np
 import sounddevice as sd
 import threading
 import time
 import whisper
+
+
+# Setting up the console and text to speach
+console = Console()
+
 
 class State(TypedDict):
     """Statefully manage chat history
@@ -42,6 +48,7 @@ class State(TypedDict):
     chat_history: Annotated[Sequence[BaseMessage], add_messages]
     context: str
     answer: str
+
 
 def call_model(state: State):
     """Utility method to get the response
@@ -63,6 +70,7 @@ def call_model(state: State):
         "answer": response["answer"],
     }
 
+
 def record_audio(stop_event, data_queue):
     """
     Captures audio data from the user's microphone and adds it to a queue for further processing.
@@ -77,21 +85,11 @@ def record_audio(stop_event, data_queue):
             console.print(status)
         data_queue.put(bytes(indata))
 
-    with sd.RawInputStream( samplerate=16000, dtype="int16", channels=1, callback=callback ):
+    with sd.RawInputStream(samplerate=16000, dtype="int16", channels=1, callback=callback):
         while not stop_event.is_set():
             time.sleep(0.1)
 
-def transcribe(audio_np: np.ndarray) -> str:
-    """
-    Transcribes the given audio data using the Whisper speech recognition model.
-    Args:
-        audio_np (numpy.ndarray): The audio data to be transcribed.
-    Returns:
-        str: The transcribed text.
-    """
-    result = stt.transcribe(audio_np) #, fp16=True)  # Set fp16=True if using a GPU
-    text = result["text"].strip()
-    return text
+
 
 def get_llm_response(text: str) -> str:
     """
@@ -101,11 +99,9 @@ def get_llm_response(text: str) -> str:
     Returns:
         str: The generated response.
     """
-    response = app.invoke(
-        {"input": text},
-        config=config,
-    )["answer"]
+    response = app.invoke({"input": text}, config=config,)["answer"]
     return response
+
 
 def play_audio(sample_rate, audio_array):
     """
@@ -124,9 +120,8 @@ if __name__ == "__main__":
     load_dotenv()
     # Load .env variables
 
-    # Setting up the console and text to speach
-    console = Console()
-    stt = whisper.load_model("base.en")
+    # stt = whisper.load_model("turbo")  # base.en
+    stt = SpeachToTextService()
     tts = TextToSpeechService()
 
     # llm = OllamaLLM(model="llama3.2")
@@ -145,7 +140,8 @@ if __name__ == "__main__":
     )
     docs = loader.load()
 
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
     vectorstore = InMemoryVectorStore.from_documents(
         documents=splits, embedding=OpenAIEmbeddings()
@@ -193,7 +189,8 @@ if __name__ == "__main__":
     )
     question_answer_chain = create_stuff_documents_chain(llm, QA_PROMPT)
 
-    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+    rag_chain = create_retrieval_chain(
+        history_aware_retriever, question_answer_chain)
 
     workflow = StateGraph(state_schema=State)
     workflow.add_edge(START, "model")
@@ -210,43 +207,17 @@ if __name__ == "__main__":
     try:
         while True:
             console.input(
-                "Press Enter to start recording, then press Enter again to stop."
-            )
+                "Press Enter to start recording, then press Enter again to stop.")
 
-            data_queue = Queue()  # type: ignore[var-annotated]
-            stop_event = threading.Event()
-            recording_thread = threading.Thread(
-                target=record_audio,
-                args=(stop_event, data_queue),
-            )
-            recording_thread.start()
+            stt.record_audio()
 
-            input()
-            stop_event.set()
-            recording_thread.join()
-
-            audio_data = b"".join(list(data_queue.queue))
-            audio_np = (
-                np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
-            )
-
-            if audio_np.size > 0:
-                with console.status("Transcribing...", spinner="earth"):
-                    text = transcribe(audio_np)
-
-                console.print(f"[yellow]You: {text}")
-
-                with console.status("Generating response...", spinner="earth"):
-                    response = get_llm_response(text)
-                    sample_rate, audio_array = tts.long_form_synthesize(response, voice_preset = "v2/en_speaker_1")
-
-                console.print(f"[cyan]Assistant: {response}")
-                play_audio(sample_rate, audio_array)
-            else:
-                console.print(
-                    "[red]No audio recorded. Please ensure your microphone is working."
-                )
-
+            with console.status("Transcribing...", spinner="earth"):
+                transcription = stt.transcribe()
+            console.print(f"[yellow]You: {transcription}")
+            
+            with console.status("Generating response...", spinner="earth"):
+                response = get_llm_response(transcription)
+            
     except KeyboardInterrupt:
         console.print("\n[red]Exiting...")
 
