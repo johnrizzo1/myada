@@ -2,14 +2,14 @@ import asyncio
 from dotenv import load_dotenv
 
 from ada.modules.logging import logger
-from ada.modules.realtime_api import RealtimeAPI
+from ada.modules.ada import ADA
 
 load_dotenv()
 
 def main():
     print(f"Starting ADA, Another Digital Assistant...")
     logger.info(f"Starting ADA, Another Digital Assistant...")
-    ada = RealtimeAPI()
+    ada = ADA()
     try:
         asyncio.run(ada.run())
     except KeyboardInterrupt:

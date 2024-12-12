@@ -11,7 +11,7 @@ import base64
 import time
 
 
-class RealtimeAPI:
+class ADA:
     def __init__(self, prompts=None, ai_assistant_name="Ada", human_name="John"):
         self.prompts = prompts
         self.api_key = os.getenv("OPENAI_API_KEY")
