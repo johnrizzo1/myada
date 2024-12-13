@@ -72,7 +72,7 @@ async def open_browser():
 
 
 # Map function names to their corresponding functions
-function_map = {
+tool_map = {
     "get_current_time": get_current_time,
     "open_browser": open_browser,
     "start_program": start_program,
@@ -80,7 +80,7 @@ function_map = {
 
 # Tools array for session initialization
 tools = [
-   {
+    {
         "type": "function",
         "name": "get_current_time",
         "description": "Returns the current time.",

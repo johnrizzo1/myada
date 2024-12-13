@@ -1,6 +1,6 @@
 from ada.modules.logging import logger, log_info, log_warning, log_error, log_tool_call, log_ws_event, log_runtime
 from ada.modules.async_microphone import AsyncMicrophone
-from ada.modules.tools import function_map, tools
+from ada.modules.tools import tool_map, tools
 
 import os
 import sys
@@ -185,9 +185,9 @@ class ADA:
             await self.execute_function_call(function_name, call_id, args, websocket)
 
     async def execute_function_call(self, function_name, call_id, args, websocket):
-        if function_name in function_map:
+        if function_name in tool_map:
             try:
-                result = await function_map[function_name](**args)
+                result = await tool_map[function_name](**args)
                 log_tool_call(function_name, args, result)
             except Exception as e:
                 error_message = f"Error executing function '{function_name}': {str(e)}"
