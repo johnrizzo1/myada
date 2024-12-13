@@ -3,18 +3,9 @@ import subprocess
 from ada.modules.logging import log_info, logger
 import sys
 
-async def get_current_time():
-    return {"current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 
-async def start_program(program_name):
-    """
-    Start a Python subprocess to execute the specified command.
-    Args:
-        prompt (str): The user's input to determine which subprocess to start.
-    """
-    log_info(f"📖 start_program()", style="bold magenta")
-    logger.info(f"📖 start_program() Opening {str}")
+def platform_execute(program_name):
     if sys.platform=='win32':
         open_command = 'start'
     elif sys.platform=='darwin':
@@ -33,9 +24,22 @@ async def start_program(program_name):
     except Exception as e:
         logger.error(f"Failed to start : {str(e)}")
         return {"status": "Error", "message": f"Failed to start : {str(e)}"}
-    else:
-        # return {"status": "No program found"}
-        return {"status": "Program started"}
+
+
+async def get_current_time():
+    return {"current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+
+async def start_program(program_name):
+    """
+    Start a Python subprocess to execute the specified command.
+    Args:
+        prompt (str): The user's input to determine which subprocess to start.
+    """
+    log_info(f"📖 start_program()", style="bold magenta")
+    logger.info(f"📖 start_program() Opening {str}")
+    platform_execute(program_name)
+    return {"status": "Program started"}
 
 
 async def open_browser():
@@ -49,25 +53,7 @@ async def open_browser():
 
     # Open the URL if it's not empty
     logger.info(f"📖 open_browser() Opening URL: {str}")
-    if sys.platform=='win32':
-        browser_command = 'start'
-    elif sys.platform=='darwin':
-        browser_command = 'open'
-    else:
-        browser_command = 'xdg-open'
-    
-    try:
-        if sys.platform=='win32':
-            subprocess.Popen([browser_command, "http://"], shell=True)
-            # os.startfile(d)
-        else:
-            subprocess.Popen([browser_command, "http://"])
-    except Exception as e:
-        logger.error(f"Failed to open browser: {str(e)}")
-        return {"status": "Error", "message": f"Failed to open browser: {str(e)}"}
-    else:
-        return {"status": "No URL found"}
-    
+    platform_execute("http://")
     return {"status": "Browser opened"}
 
 
@@ -76,6 +62,7 @@ tool_map = {
     "get_current_time": get_current_time,
     "open_browser": open_browser,
     "start_program": start_program,
+    # "create_note": create_note,
 }
 
 # Tools array for session initialization
