@@ -15,7 +15,12 @@ dependencies = [
     , "openai>=1.51.0"
     , "openbb"
 
+    # General Notebook Deps
+    , "ipykernel"
+
     # For the research notebooks
+    , "huggingface_hub"
+    , "langchain-anthropic"
     , "langchain-core"
     , "langchain-community"
     , "langchain-openai"
@@ -24,6 +29,12 @@ dependencies = [
     , "langgraph-sdk"
     , "matplotlib"
     , "torch"
+    , "torchvision"
+    , "transformers"
+    , "datasets"
+    , "nltk"
+    # , "openai-whisper"
+    , "sounddevice"
 ]
 
 [build-system]
