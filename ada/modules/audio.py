@@ -4,7 +4,7 @@ import logging
 import asyncio
 
 
-class AsyncMicrophone:
+class AsyncAudio:
     def __init__(self, chunk=1024, format=pyaudio.paInt16, channels=1, rate=24000):
         self.chunk = chunk
         self.format = format

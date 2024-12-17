@@ -1,9 +1,8 @@
 from ada.modules.logging import logger, log_info, log_warning, log_error, log_tool_call, log_ws_event, log_runtime
-from ada.modules.async_microphone import AsyncMicrophone
+from ada.modules.audio import AsyncAudio
 from ada.modules.tools import tool_map, tools
+from langchain_ollama.llms import OllamaLLM
 
-import os
-import sys
 import asyncio
 import websockets
 import json
@@ -11,15 +10,22 @@ import base64
 import time
 
 
-class ADA:
-    def __init__(self, prompts=None, ai_assistant_name="Ada", human_name="John"):
+class AdaOllama:
+    def __init__(self, 
+                 model="gpt-4o-realtime",
+                 prompts=None, 
+                 ai_assistant_name="Ada", 
+                 human_name="John",
+                 system_message_suffix="Keep all of your responses ultra short. Say things like: 'Task complete', 'There was an error', 'I need more information'.",
+                 PREFIX_PADDING_MS=300,
+                 SILENCE_THRESHOLD=0.5,
+                 SILENCE_DURATION_MS=700,
+                 audio=AsyncAudio()
+                 ):
         self.prompts = prompts
-        self.api_key = os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            logger.error("Please set the OPENAI_API_KEY in your .env file.")
-            sys.exit(1)
         self.exit_event = asyncio.Event()
-        self.mic = AsyncMicrophone()
+        self.audio = audio
+        self.llm = OllamaLLM(model="llama3.2")
 
         # Initialize state variables
         self.assistant_reply = ""
@@ -28,76 +34,41 @@ class ADA:
         self.function_call = None
         self.function_call_args = ""
         self.response_start_time = None
-
-        self.system_message_suffix = "Keep all of your responses ultra short. Say things like: 'Task complete', 'There was an error', 'I need more information'."
-
+        self.system_message_suffix = system_message_suffix
         self.SESSION_INSTRUCTIONS = (
             f"You are {ai_assistant_name}, a helpful assistant. Respond to {human_name}. "
             f"{self.system_message_suffix}"
         )
-        self.PREFIX_PADDING_MS = 300
-        self.SILENCE_THRESHOLD = 0.5
-        self.SILENCE_DURATION_MS = 700
+        self.PREFIX_PADDING_MS = PREFIX_PADDING_MS
+        self.SILENCE_THRESHOLD = SILENCE_THRESHOLD
+        self.SILENCE_DURATION_MS = SILENCE_DURATION_MS
 
     async def run(self):
         while True:
             try:
-                url = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01"
-                # url = "wss://api.openai.com/v1/realtime?model=gpt-4o"
-                headers = {
-                    "Authorization": f"Bearer {self.api_key}",
-                    "OpenAI-Beta": "realtime=v1",
-                }
+                log_info("✅ Connected to the server.", style="bold green")
+                logger.info("Conversation started. Speak freely, and the assistant will respond.")
 
-                async with websockets.connect(
-                    url,
-                    additional_headers=headers,
-                    close_timeout=120,
-                    ping_interval=30,
-                    ping_timeout=10,
-                ) as websocket:
-                    log_info("✅ Connected to the server.", style="bold green")
+                if self.prompts:
+                    await self.send_initial_prompts(websocket)
+                else:
+                    self.audio.start_recording()
+                    logger.info("Recording started. Listening for speech...")
 
-                    await self.initialize_session(websocket)
-                    ws_task = asyncio.create_task(self.process_ws_messages(websocket))
+                await self.send_audio_loop(websocket)
 
-                    logger.info(
-                        "Conversation started. Speak freely, and the assistant will respond."
-                    )
+                logger.info("before await ws_task")
 
-                    if self.prompts:
-                        await self.send_initial_prompts(websocket)
-                    else:
-                        self.mic.start_recording()
-                        logger.info("Recording started. Listening for speech...")
+                # Wait for the WebSocket processing task to complete
+                await ws_task
 
-                    await self.send_audio_loop(websocket)
-
-                    logger.info("before await ws_task")
-
-                    # Wait for the WebSocket processing task to complete
-                    await ws_task
-
-                    logger.info("await ws_task complete")
+                logger.info("await ws_task complete")
 
                 # If execution reaches here without exceptions, exit the loop
                 break
-            except websockets.ConnectionClosedError as e:
-                if "keepalive ping timeout" in str(e):
-                    logger.warning(
-                        "WebSocket connection lost due to keepalive ping timeout. Reconnecting..."
-                    )
-                    await asyncio.sleep(1)  # Wait before reconnecting
-                    continue  # Retry the connection
-                else:
-                    logger.exception("WebSocket connection closed unexpectedly.")
-                    break  # Exit the loop on other connection errors
-            except Exception as e:
-                logger.exception(f"An unexpected error occurred: {e}")
-                break  # Exit the loop on unexpected exceptions
             finally:
-                self.mic.stop_recording()
-                self.mic.close()
+                self.audio.stop_recording()
+                self.audio.close()
 
     async def initialize_session(self, websocket):
         session_update = {
@@ -134,7 +105,7 @@ class ADA:
     async def handle_event(self, event, websocket):
         event_type = event.get("type")
         if event_type == "response.created":
-            self.mic.start_receiving()
+            self.audio.start_receiving()
             self.response_in_progress = True
         elif event_type == "response.output_item.added":
             await self.handle_output_item_added(event)
@@ -158,7 +129,7 @@ class ADA:
             await self.handle_speech_stopped(websocket)
         elif event_type == "rate_limits.updated":
             self.response_in_progress = False
-            self.mic.is_recording = True
+            self.audio.is_recording = True
             logger.info("Resumed recording after rate_limits.updated")
 
     async def handle_output_item_added(self, event):
@@ -241,12 +212,12 @@ class ADA:
             logger.info(
                 f"Sending {len(audio_data)} bytes of audio data to play_audio()"
             )
-            await self.mic.play_audio(audio_data)
+            await self.audio.play_audio(audio_data)
             logger.info("Finished play_audio()")
         self.assistant_reply = ""
         self.audio_chunks = []
         logger.info("Calling stop_receiving()")
-        self.mic.stop_receiving()
+        self.audio.stop_receiving()
 
     async def handle_error(self, event, websocket):
         error_message = event.get("error", {}).get("message", "")
@@ -260,14 +231,16 @@ class ADA:
             logger.error(f"Unhandled error: {error_message}")
 
     async def handle_speech_stopped(self, websocket):
-        self.mic.stop_recording()
+        self.audio.stop_recording()
         logger.info("Speech ended, processing...")
         self.response_start_time = time.perf_counter()
         await websocket.send(json.dumps({"type": "input_audio_buffer.commit"}))
 
     async def send_initial_prompts(self, websocket):
         logger.info(f"Sending {len(self.prompts)} prompts: {self.prompts}")
-        content = [{"type": "input_text", "text": prompt} for prompt in self.prompts]
+        content = [{"type": "input_text", "text": prompt} 
+                   for prompt 
+                   in self.prompts]
         event = {
             "type": "conversation.item.create",
             "item": {
@@ -288,10 +261,9 @@ class ADA:
         try:
             while not self.exit_event.is_set():
                 await asyncio.sleep(0.1)  # Small delay to accumulate audio data
-                if not self.mic.is_receiving:
-                    audio_data = self.mic.get_audio_data()
+                if not self.audio.is_receiving:
+                    audio_data = self.audio.get_audio_data()
                     if audio_data and len(audio_data) > 0:
-                        # base64_audio = base64_encode_audio(audio_data)
                         base64_audio = base64.b64encode(audio_data).decode('utf-8')
                         if base64_audio:
                             audio_event = {
@@ -308,6 +280,6 @@ class ADA:
             logger.info("Keyboard interrupt received. Closing the connection.")
         finally:
             self.exit_event.set()
-            self.mic.stop_recording()
-            self.mic.close()
+            self.audio.stop_recording()
+            self.audio.close()
             await websocket.close()

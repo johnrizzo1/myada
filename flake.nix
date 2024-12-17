@@ -33,7 +33,9 @@
             wget
             nixpkgs-fmt
             uv
-            python3
+            (python3.withPackages (python-pkgs: with python-pkgs; [
+              pip
+            ]))
           ];
 
           

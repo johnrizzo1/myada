@@ -1,15 +1,35 @@
 import asyncio
+import os
+import sys
 from dotenv import load_dotenv
 
 from ada.modules.logging import logger
-from ada.modules.ada import ADA
+from ada.modules.ada_openai import AdaOpenAI
+from ada.modules.ada_ollama import AdaOllama
+from ada.modules.audio import AsyncAudio
 
-load_dotenv()
 
 def main():
     print(f"Starting ADA, Another Digital Assistant...")
     logger.info(f"Starting ADA, Another Digital Assistant...")
-    ada = ADA()
+
+    load_dotenv()
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        logger.error("Please set the OPENAI_API_KEY in your .env file.")
+        sys.exit(1)
+
+    url = os.getenv("OPENAI_WSS_URL")
+    if not url:
+        logger.error("Please set the OPENAI_WSS_URL in your .env file.")
+
+    model = os.getenv("MODEL")
+    if not model:
+        model="gpt-4o-realtime-preview-2024-10-01"
+        # model="gpt-4o-realtime"
+    # ada = AdaOpenAI(api_key=api_key, url=url, model=model)
+    ada = AdaOpenAI()
+    # ada = AdaOllama()
     try:
         asyncio.run(ada.run())
     except KeyboardInterrupt:
