@@ -22,7 +22,6 @@ class AdaOllama:
                  SILENCE_DURATION_MS=700,
                  audio=AsyncAudio()
                  ):
-        self.prompts = prompts
         self.exit_event = asyncio.Event()
         self.audio = audio
         self.llm = OllamaLLM(model="llama3.2")

@@ -7,6 +7,7 @@ from ada.modules.logging import logger
 from ada.modules.ada_openai import AdaOpenAI
 from ada.modules.ada_ollama import AdaOllama
 from ada.modules.audio import AsyncAudio
+from ada.modules.stt import SpeachToTextService
 
 
 def main():
@@ -27,9 +28,11 @@ def main():
     if not model:
         model="gpt-4o-realtime-preview-2024-10-01"
         # model="gpt-4o-realtime"
+    
     # ada = AdaOpenAI(api_key=api_key, url=url, model=model)
-    ada = AdaOpenAI()
+    # ada = AdaOpenAI()
     # ada = AdaOllama()
+    ada = SpeachToTextService()
     try:
         asyncio.run(ada.run())
     except KeyboardInterrupt:
