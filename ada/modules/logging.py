@@ -5,21 +5,21 @@ from rich.text import Text
 import json
 from datetime import datetime
 
+
 RUN_TIME_TABLE_LOG_JSON = "runtime_time_table.jsonl"
 
-console = Console()
 
 def setup_logging():
     # Set up logging with Rich
-    logger = logging.getLogger("realtime_api")
-    logger.setLevel(logging.INFO)
+    _logger = logging.getLogger("ada")
+    _logger.setLevel(logging.INFO)
+    console = Console()
     handler = RichHandler(rich_tracebacks=True, console=console)
     formatter = logging.Formatter("%(message)s", datefmt="[%X]")
     handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.propagate = False
-    return logger
-
+    _logger.addHandler(handler)
+    _logger.propagate = False
+    return _logger
 
 logger = setup_logging()
 

@@ -17,6 +17,8 @@ dependencies = [
 
     # General Notebook Deps
     , "ipykernel"
+    , "ipywidgets"
+    , "notebook"
 
     # For the research notebooks
     , "huggingface_hub"
@@ -34,7 +36,12 @@ dependencies = [
     , "datasets"
     , "nltk"
     # , "openai-whisper"
+    , "faster-whisper"
     , "sounddevice"
+    , "duckduckgo_search"
+    , "google-genai"
+    , "google-generativeai"
+    , "loguru"
 ]
 
 [build-system]

@@ -25,7 +25,7 @@
             wget
             nixpkgs-fmt
             uv
-            ffmpeg # for whisper
+            ffmpeg
             # (python3.withPackages (python-pkgs: with python-pkgs; [
             #   pip
             #   openai-whisper
