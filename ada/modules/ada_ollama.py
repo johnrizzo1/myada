@@ -1,4 +1,5 @@
 import logging
+import sys
 import threading
 import time
 from queue import Queue
@@ -61,7 +62,7 @@ class AdaOllama:
 
         if device is None:
             if torch.cuda.is_available(): self.device = "cuda" 
-            elif torch.backends.mps.is_available(): self.device = "mps" 
+            elif sys.platform=='darwin' and torch.backends.mps.is_available(): self.device = "mps" 
             else: self.device = "cpu"
 
         self.processor = AutoProcessor.from_pretrained('suno/bark-small')
@@ -268,13 +269,23 @@ class AdaOllama:
         """
         inputs = self.processor(text, voice_preset=voice_preset, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        attention_mask = inputs["attention_mask"]
 
         with torch.no_grad():
-            audio_array = self.ttsmodel.generate(**inputs)
+            audio_array = self.ttsmodel.generate(**inputs,
+                                                #  attention_mask=attention_mask,
+                                                 pad_token_id=self.processor.tokenizer.pad_token_id)
             # audio_array = self.ttsmodel.generate(**inputs, pad_token_id=10000)
 
         # audio_array = audio_array.cpu().numpy().squeeze()
-        audio_array = audio_array.mps().numpy().squeeze()
+        if self.device=='mps':
+            audio_array = audio_array.mps().numpy().squeeze()
+        elif self.device=='cuda':
+            audio_array = audio_array.cuda().numpy().squeeze()
+        else:
+            self.logger.warning("Not using any hardware accellerator")
+            audio_array = audio_array.cpu().numpy().squeeze()
+
         sample_rate = self.ttsmodel.generation_config.sample_rate
         return sample_rate, audio_array
 

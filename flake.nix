@@ -3,15 +3,18 @@
   
   inputs = {
     flake-schemas.url = "https://flakehub.com/f/DeterminateSystems/flake-schemas/*";
-
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/*";
   };
   
   outputs = { self, flake-schemas, nixpkgs }:
     let
-      supportedSystems = [ "aarch64-darwin" ];
+      supportedSystems = [ "aarch64-darwin" "x86_64-linux" ];
       forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs { 
+          inherit system;
+          config.allowUnfree = true;
+          config.cudaSupport = true;
+        };
       });
     in {
       schemas = flake-schemas.schemas;
@@ -26,10 +29,13 @@
             nixpkgs-fmt
             uv
             ffmpeg
-            # (python3.withPackages (python-pkgs: with python-pkgs; [
-            #   pip
-            #   openai-whisper
-            # ]))
+            portaudio
+            cudatoolkit
+            (python3.withPackages (python-pkgs: with python-pkgs; [
+              torch
+              torchvision
+              python-dotenv
+            ]))
           ];
           
           env = {
