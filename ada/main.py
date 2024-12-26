@@ -31,8 +31,8 @@ def main():
         # model="gpt-4o-realtime"
     
     # ada = AdaOpenAI(api_key=api_key, url=url, model=model)
-    # ada = AdaOpenAI()
-    ada = AdaOllama()
+    ada = AdaOpenAI()
+    # ada = AdaOllama()
     try:
         asyncio.run(ada.run())
     except KeyboardInterrupt:

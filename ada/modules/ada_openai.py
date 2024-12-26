@@ -1,4 +1,4 @@
-from ada.modules.logging import logger, log_info, log_warning, log_error, log_tool_call, log_ws_event, log_runtime
+from ada.modules.logging import logger, log_tool_call, log_ws_event, log_runtime
 from ada.modules.audio import AsyncAudio
 from ada.modules.tools import tool_map, tools
 
@@ -46,7 +46,7 @@ class AdaOpenAI:
         while True:
             try:
                 url = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01"
-                # url = "wss://api.openai.com/v1/realtime?model=gpt-4o"
+                # url = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime"
                 headers = {
                     "Authorization": f"Bearer {self.api_key}",
                     "OpenAI-Beta": "realtime=v1",
@@ -54,13 +54,12 @@ class AdaOpenAI:
 
                 async with websockets.connect(
                     url,
-                    # additional_headers=headers,
                     extra_headers=headers,
                     close_timeout=120,
                     ping_interval=30,
                     ping_timeout=10,
                 ) as websocket:
-                    log_info("✅ Connected to the server.", style="bold green")
+                    logger.info("Connected to the API.")
 
                     await self.initialize_session(websocket)
                     ws_task = asyncio.create_task(self.process_ws_messages(websocket))
@@ -132,7 +131,7 @@ class AdaOpenAI:
                 log_ws_event("Incoming", event)
                 await self.handle_event(event, websocket)
             except websockets.ConnectionClosed:
-                log_warning("⚠️ WebSocket connection lost.")
+                logger.warning("WebSocket connection lost.")
                 break
 
     async def handle_event(self, event, websocket):
@@ -195,12 +194,12 @@ class AdaOpenAI:
                 log_tool_call(function_name, args, result)
             except Exception as e:
                 error_message = f"Error executing function '{function_name}': {str(e)}"
-                log_error(error_message)
+                logger.error(error_message)
                 result = {"error": error_message}
                 await self.send_error_message_to_assistant(error_message, websocket)
         else:
             error_message = f"Function '{function_name}' not found. Add to function_map in tools.py."
-            log_error(error_message)
+            logger.error(error_message)
             result = {"error": error_message}
             await self.send_error_message_to_assistant(error_message, websocket)
 
@@ -239,7 +238,7 @@ class AdaOpenAI:
             log_runtime("realtime_api_response", response_duration)
             self.response_start_time = None
 
-        log_info("Assistant response complete.", style="bold blue")
+        logger.info("Assistant response complete.")
         if self.audio_chunks:
             audio_data = b"".join(self.audio_chunks)
             logger.info(
@@ -254,7 +253,7 @@ class AdaOpenAI:
 
     async def handle_error(self, event, websocket):
         error_message = event.get("error", {}).get("message", "")
-        log_error(f"Error: {error_message}")
+        logger.error(f"Error: {error_message}")
         if "buffer is empty" in error_message:
             logger.info("Received 'buffer is empty' error, no audio data sent.")
         elif "Conversation already has an active response" in error_message:
