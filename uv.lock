@@ -32,6 +32,7 @@ dependencies = [
     { name = "notebook" },
     { name = "openai" },
     { name = "openbb" },
+    { name = "piper-tts" },
     { name = "pyaudio" },
     { name = "python-dotenv" },
     { name = "requests" },
@@ -66,6 +67,7 @@ requires-dist = [
     { name = "notebook" },
     { name = "openai", specifier = ">=1.51.0" },
     { name = "openbb" },
+    { name = "piper-tts" },
     { name = "pyaudio" },
     { name = "python-dotenv" },
     { name = "requests" },
@@ -2865,6 +2867,26 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d6/b9/fb620dd47fc7cc9678af8f8bd8c772034ca4977237049287e99dda360b66/pillow-11.0.0-cp313-cp313t-win32.whl", hash = "sha256:607bbe123c74e272e381a8d1957083a9463401f7bd01287f50521ecb05a313f8", size = 2253197 },
     { url = "https://files.pythonhosted.org/packages/df/86/25dde85c06c89d7fc5db17940f07aae0a56ac69aa9ccb5eb0f09798862a8/pillow-11.0.0-cp313-cp313t-win_amd64.whl", hash = "sha256:5c39ed17edea3bc69c743a8dd3e9853b7509625c2462532e62baa0732163a904", size = 2572169 },
     { url = "https://files.pythonhosted.org/packages/51/85/9c33f2517add612e17f3381aee7c4072779130c634921a756c97bc29fb49/pillow-11.0.0-cp313-cp313t-win_arm64.whl", hash = "sha256:75acbbeb05b86bc53cbe7b7e6fe00fbcf82ad7c684b3ad82e3d711da9ba287d3", size = 2256828 },
+]
+
+[[package]]
+name = "piper-phonemize"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/8b/df9da36b29664db0883beb0d2c36b7b4bf6e683fef16dea2195742525b99/piper_phonemize-1.1.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:9c5401dc49ca868f988d88d48e592ec39a10e3fedde994c884854a6c0f44f634", size = 16061014 },
+]
+
+[[package]]
+name = "piper-tts"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "onnxruntime" },
+    { name = "piper-phonemize" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/aa/215bced0725cf5b5afe939f86b177c8ddb0d38292a94e85c55b3fcf6d46d/piper_tts-1.2.0-py3-none-any.whl", hash = "sha256:f3410aea0f8051d8a118050a5b954faeb36f6ac0da6d10fc2f8a043a8eaf27b5", size = 29454 },
 ]
 
 [[package]]

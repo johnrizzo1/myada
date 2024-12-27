@@ -4,7 +4,6 @@ from ada.modules.logging import log_info, logger
 import sys
 
 
-
 def platform_execute(program_name):
     if sys.platform=='win32':
         open_command = 'start'

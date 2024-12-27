@@ -4,7 +4,8 @@ import sys
 
 from dotenv import load_dotenv
 
-from ada.modules.ada_openai import AdaOpenAI
+from ada.modules.ada_openai_realtimeapi import AdaOpenAI
+from ada.modules.ada_openai_multiagent import AdaOpenAIMultiAgent
 from ada.modules.ada_ollama import AdaOllama
 from ada.modules.logging import logger
 
@@ -31,7 +32,8 @@ def main():
         # model="gpt-4o-realtime"
     
     # ada = AdaOpenAI(api_key=api_key, url=url, model=model)
-    ada = AdaOpenAI()
+    # ada = AdaOpenAI()
+    ada = AdaOpenAIMultiAgent()
     # ada = AdaOllama()
     try:
         asyncio.run(ada.run())
