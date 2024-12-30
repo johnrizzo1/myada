@@ -38,7 +38,7 @@ dependencies = [
     , "nltk"
     # , "openai-whisper"
     , "faster-whisper"
-    , "piper-tts"
+    # , "piper-tts"
     , "sounddevice"
     , "duckduckgo_search"
     , "google-genai"

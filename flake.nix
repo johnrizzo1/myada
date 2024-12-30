@@ -13,7 +13,7 @@
         pkgs = import nixpkgs { 
           inherit system;
           config.allowUnfree = true;
-          # config.cudaSupport = true;
+          config.cudaSupport = true;
         };
       });
     in {
@@ -35,6 +35,12 @@
               torch
               torchvision
               python-dotenv
+              pip
+              ipykernel
+              jupyterlab
+              transformers
+              pyaudio
+              sounddevice
             ]))
           ];
           
