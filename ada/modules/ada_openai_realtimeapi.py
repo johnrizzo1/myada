@@ -13,9 +13,9 @@ import time
 
 class AdaOpenAI:
     def __init__(self, 
-                 prompts=None, 
-                 ai_assistant_name="Ada", 
-                 human_name="John"):
+                prompts=None, 
+                ai_assistant_name="Ada", 
+                human_name="John"):
         self.prompts = prompts
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:

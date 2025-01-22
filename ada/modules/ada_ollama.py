@@ -56,7 +56,7 @@ class AdaOllama:
         # nltk.download("punkt")
         # nltk.download("wordnet")
         # nltk.download("omw-1.4")
-        # nltk.download("punkt_tab")
+        nltk.download("punkt_tab")
 
         if device is None:
             if torch.cuda.is_available(): self.device = "cuda" 
@@ -220,9 +220,9 @@ class AdaOllama:
 
         text = ""
         segments, info = self.sttmodel.transcribe(audio_np, 
-                                                  beam_size=5,
-                                                  language="en",
-                                                  condition_on_previous_text=False)
+                                                beam_size=5,
+                                                language="en",
+                                                condition_on_previous_text=False)
         for segment in segments:
             # self.logger.info("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
             text += segment.text

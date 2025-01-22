@@ -62,7 +62,7 @@ class AdaOpenAIMultiAgent:
                 if not self.mic.is_receiving:
                     audio_data = self.mic.get_audio_data()
                     if audio_data and len(audio_data) > 0:
-                        
+                        pass
                         # base64_audio = base64.b64encode(audio_data).decode('utf-8')
                         # if base64_audio:
                         #     audio_event = {

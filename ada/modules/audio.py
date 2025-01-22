@@ -1,9 +1,9 @@
+from __future__ import annotations
 import pyaudio
 import queue
 import logging
 import asyncio
 import numpy as np
-from __future__ import annotations
 from typing import TYPE_CHECKING, BinaryIO
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator

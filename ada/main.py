@@ -33,8 +33,8 @@ def main():
     
     # ada = AdaOpenAI(api_key=api_key, url=url, model=model)
     # ada = AdaOpenAI()
-    ada = AdaOpenAIMultiAgent()
-    # ada = AdaOllama()
+    # ada = AdaOpenAIMultiAgent()
+    ada = AdaOllama()
     try:
         asyncio.run(ada.run())
     except KeyboardInterrupt:

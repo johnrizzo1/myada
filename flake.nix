@@ -13,7 +13,7 @@
         pkgs = import nixpkgs { 
           inherit system;
           config.allowUnfree = true;
-          # config.cudaSupport = true;
+          config.cudaSupport = true;
         };
       });
     in {
@@ -31,11 +31,11 @@
             ffmpeg
             portaudio
             # cudatoolkit
-            (python3.withPackages (python-pkgs: with python-pkgs; [
-              torch
-              torchvision
-              python-dotenv
-            ]))
+            # (python3.withPackages (python-pkgs: with python-pkgs; [
+            #   torch
+            #   torchvision
+            #   python-dotenv
+            # ]))
           ];
           
           env = {
